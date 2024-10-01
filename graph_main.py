@@ -110,7 +110,7 @@ def generate_thumbnail(file_name,thumb_name):
 
 
 
-def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_base='.cache', data_dir='out_eeg'):
+def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_base='cache', data_dir='out_eeg'):
 
     base_name = os.path.splitext(file)[0]
     cache_dir = f'{cache_dir_base}/{base_name}'
@@ -296,7 +296,7 @@ def main():
 
 
     data_dir = 'out_eeg'
-    cache_dir_base = f'.cache'
+    cache_dir_base = f'cache'
 
 
 
@@ -306,7 +306,7 @@ def main():
     # generate_detail_html_file(files[1], f'{cache_dir_base}')
 
     for f in files:
-        # generate_img_report_for(f, cache_dir_base, data_dir)
+        generate_img_report_for(f, cache_dir_base, data_dir)
         generate_detail_html_file(f, f'{cache_dir_base}')
 
     generate_index_file(files, f'{cache_dir_base}')
