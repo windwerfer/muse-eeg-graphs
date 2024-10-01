@@ -9,10 +9,11 @@ from matplotlib import pyplot as plt
   # Hz
 
 
-def plot_frequency_domain_1(eeg_data, sampling_rate = 256):
+def plot_frequency_domain_1(eeg_data, location='.cache/',  sampling_rate = 256):
 
+    file = 'plot_frequency_domain_1.png'
 
-    eeg_signal = eeg_data['tp9'].values
+    eeg_signal = eeg_data['electrodes_average'].values
 
     # Perform FFT
     n = len(eeg_signal)
@@ -45,4 +46,8 @@ def plot_frequency_domain_1(eeg_data, sampling_rate = 256):
     plt.xlabel('Frequency (Hz)')
     plt.ylabel('Power')
     plt.legend()
-    plt.show()
+    #plt.show()
+
+    # Save the figure
+    plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+    return file

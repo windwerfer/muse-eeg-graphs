@@ -22,10 +22,11 @@ from matplotlib import pyplot as plt
 #     which further suggests the absence of excessive noise or artifacts.
 
 
-def plot_amplitude_distribution_histogram_1(eeg_data, sampling_rate = 256):
+def plot_amplitude_distribution_histogram_1(eeg_data, location='.cache/', sampling_rate = 256):
 
+    file = 'plot_amplitude_distribution_histogram_1.png'
 
-    eeg_signal = eeg_data['tp9'].values
+    eeg_signal = eeg_data['electrodes_average'].values
 
     plt.figure(figsize=(10, 6))
     plt.hist(eeg_signal, bins=50, color='c', edgecolor='black', alpha=0.7)
@@ -33,4 +34,9 @@ def plot_amplitude_distribution_histogram_1(eeg_data, sampling_rate = 256):
     plt.xlabel('Amplitude')
     plt.ylabel('Frequency')
     plt.grid(True)
-    plt.show()
+    # plt.show()
+
+
+    # Save the figure
+    plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+    return file

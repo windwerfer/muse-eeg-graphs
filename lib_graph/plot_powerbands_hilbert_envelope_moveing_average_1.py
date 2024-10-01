@@ -5,7 +5,7 @@ from scipy.signal import welch
 from scipy.signal import spectrogram
 from scipy.signal import hilbert
 
-from lib.func_filters import bandpass_filter_filtfilt
+from lib_graph.func_filters import bandpass_filter_filtfilt
 
 
 
@@ -14,10 +14,11 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode='same')
 
 
-def plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data, sampling_rate = 256, only_hilbert=True):
+def plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data, location='.cache/', sampling_rate = 256, only_hilbert=True):
 
+    file = 'plot_powerbands_hilbert_envelope_moveing_average_1.png'
 
-    eeg_signal = eeg_data['tp9'].values
+    eeg_signal = eeg_data['electrodes_average'].values
 
     # Define the frequency range for the Alpha band (8-13 Hz)
     alpha_low = 8
@@ -46,4 +47,8 @@ def plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data, sampling_rate =
     plt.ylabel('Amplitude')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    # plt.show()
+
+    # Save the figure
+    plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+    return file

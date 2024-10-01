@@ -4,10 +4,11 @@ from scipy.signal import welch
 
 from scipy.signal import spectrogram
 
-def plot_time_frequency_analysis_1(eeg_data, sampling_rate = 256):
+def plot_time_frequency_analysis_1(eeg_data, location='.cache/', sampling_rate = 256):
 
+    file = 'plot_time_frequency_analysis_1.png'
 
-    eeg_signal = eeg_data['tp9'].values
+    eeg_signal = eeg_data['electrodes_average'].values
 
     # Calculate the spectrogram
     frequencies, times, Sxx = spectrogram(eeg_signal, fs=sampling_rate, nperseg=512, noverlap=256, nfft=1024)
@@ -20,4 +21,8 @@ def plot_time_frequency_analysis_1(eeg_data, sampling_rate = 256):
     plt.xlabel('Time (s)')
     plt.colorbar(label='Power (dB)')
     plt.ylim(0, 50)  # Focus on the range of 0-50 Hz
-    plt.show()
+    # plt.show()
+
+    # Save the figure
+    plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+    return file

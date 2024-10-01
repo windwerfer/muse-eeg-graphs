@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+from Demos.getfilever import pairs
 
 
 def remove_non_connected_electrode_parts(eeg_data, signal_quality_data, ignored_electrodes=None, truncate_only_beginning_and_end=True, sample_frequency_data=256, sample_frequency_signal_quality=256):
@@ -55,3 +57,44 @@ def remove_non_connected_electrode_parts(eeg_data, signal_quality_data, ignored_
     eeg_data_filtered.drop(columns=signal_quality_columns, inplace=True)
 
     return eeg_data_filtered, signal_quality_data_filtered
+
+def fill_with_valid_data(eeg_data, electrode, bad_electrodes, pairs):
+    if electrode not in bad_electrodes:
+        return eeg_data[electrode].values
+
+    elif pairs[electrode] not in bad_electrodes:
+        return eeg_data[pairs[electrode]].values
+
+    else:
+        return None
+
+
+def add_average_to_data(eeg_data, bad_electrodes):
+
+    pairs = {'tp9':'tp10','tp10':'tp9','af7':'af8','af8':'af7'}
+
+
+    # Extract the values for each channel
+    # tp9 = eeg_data['tp9'].values
+    tp9 = fill_with_valid_data(eeg_data, 'tp9', bad_electrodes, pairs)
+    af7 = fill_with_valid_data(eeg_data, 'af7', bad_electrodes, pairs)
+    af8 = fill_with_valid_data(eeg_data, 'af8', bad_electrodes, pairs)
+    tp10 = fill_with_valid_data(eeg_data, 'tp10', bad_electrodes, pairs)
+
+    # choose which electrodes to average
+    if tp9 is None:
+        stack = (af7, af8)
+    elif af7 is None:
+        stack = (tp9, tp10)
+    else:
+        stack = (tp9, af7, af8, tp10)
+
+    # Stack these arrays into a single numpy array for easy manipulation
+    channels = np.column_stack(stack)
+
+    # Calculate the average across these channels for each time point
+    # axis=1 indicates that we are averaging over the columns (channels)
+    average_signal = np.mean(channels, axis=1)
+
+    # If you want to add this back into your DataFrame for further analysis or storage:
+    eeg_data['electrodes_average'] = average_signal
