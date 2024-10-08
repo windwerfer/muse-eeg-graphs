@@ -7,52 +7,51 @@ from scipy import signal
 #  accurate results, especially for shorter segments or when looking for changes over time. If you need to
 #  calculate for different intervals with high precision, consider using techniques like Welch's method
 #  or applying a window function.
-def calculate_peak_alpha_simple(eeg_data, sample_rate=256):
 
-    # Channels to analyze
+
+def calculate_peak_alpha_simple(eeg_data, sample_rate=256, flatness_threshold=0.1, power_threshold=1e-5):
     channels = ['tp9', 'af7', 'af8', 'tp10']
-
     peak_alphas = {}
 
     for channel in channels:
-        # Extract the time series for this channel
         channel_data = eeg_data[channel].values
 
         # Compute the FFT
-        freqs = np.fft.fftfreq(len(channel_data), d= 1 /sample_rate)
+        freqs = np.fft.fftfreq(len(channel_data), d=1 / sample_rate)
         fft_values = np.abs(np.fft.fft(channel_data))
 
-        # We're interested in the positive frequencies only
+        # Consider only positive frequencies
         positive_freqs = freqs[freqs >= 0]
         fft_values = fft_values[freqs >= 0]
 
-        # Define the alpha band (typically 8-13 Hz)
+        # Define the alpha band
         alpha_band = (positive_freqs >= 8) & (positive_freqs <= 13)
 
-        # Find the frequency with the max power in the alpha band
+        # Extract alpha band data
         alpha_fft = fft_values[alpha_band]
-        peak_alpha_freq = positive_freqs[alpha_band][np.argmax(alpha_fft)]
+        alpha_freqs = positive_freqs[alpha_band]
+
+        # Check for a discernible peak in the alpha band
+        if np.max(alpha_fft) - np.min(alpha_fft) < flatness_threshold or np.max(alpha_fft) < power_threshold:
+            peak_alpha_freq = None  # Indicating no significant peak detected
+        else:
+            peak_alpha_freq = alpha_freqs[np.argmax(alpha_fft)]
 
         peak_alphas[channel] = peak_alpha_freq
 
-    # If you want the overall peak alpha for all channels combined,
-    # you could average or select based on some criteria. Here I'll average:
-    overall_peak_alpha = np.mean(list(peak_alphas.values()))
+    # Calculate the mean, filtering out None values
+    valid_peaks = [v for v in peak_alphas.values() if v is not None]
+    if not valid_peaks:  # If all are None
+        overall_peak_alpha = None
+    else:
+        overall_peak_alpha = np.mean(valid_peaks)
 
-    ret = {'peak_aplhas':peak_alphas, 'mean_peak_alpha':overall_peak_alpha}
-
-    return ret
-
-# Example usage:
-# Assuming eeg_data is your DataFrame with columns 'tp9', 'af7', 'af8', 'tp10'
-# peak_alpha_per_channel, avg_peak_alpha = calculate_peak_alpha(eeg_data)
-# print(f"Peak Alpha per channel: {peak_alpha_per_channel}")
-# print(f"Average Peak Alpha: {avg_peak_alpha}")
+    return {'peak_alphas': peak_alphas, 'mean_peak_alpha': overall_peak_alpha}
 
 
 
-def calculate_peak_alpha_welch(eeg_data, sample_rate=256, nperseg=256, noverlap=None):
-
+def calculate_peak_alpha_welch(eeg_data, sample_rate=256, nperseg=256, noverlap=None, flatness_threshold=0.1,
+                               power_threshold=1e-5):
     channels = ['tp9', 'af7', 'af8', 'tp10']
 
     peak_alphas = {}
@@ -63,23 +62,31 @@ def calculate_peak_alpha_welch(eeg_data, sample_rate=256, nperseg=256, noverlap=
     for channel in channels:
         channel_data = eeg_data[channel].values
 
-        # Using Welch's method
+        # Using Welch's method to compute PSD
         freqs, psd = signal.welch(channel_data, sample_rate, nperseg=nperseg, noverlap=noverlap)
 
         # Define alpha band
         alpha_band = (freqs >= 8) & (freqs <= 13)
 
-        # Find peak alpha frequency
+        # Check for peak within the alpha band
         alpha_psd = psd[alpha_band]
-        peak_alpha_freq = freqs[alpha_band][np.argmax(alpha_psd)]
+
+        # If the power spectrum is flat or below threshold, consider no peak
+        if np.max(alpha_psd) - np.min(alpha_psd) < flatness_threshold or np.max(alpha_psd) < power_threshold:
+            peak_alpha_freq = None
+        else:
+            peak_alpha_freq = freqs[alpha_band][np.argmax(alpha_psd)]
 
         peak_alphas[channel] = peak_alpha_freq
 
-    overall_peak_alpha = np.mean(list(peak_alphas.values()))
+    # Calculate mean, ignoring None values
+    valid_peaks = [v for v in peak_alphas.values() if v is not None]
+    if not valid_peaks:
+        overall_peak_alpha = None
+    else:
+        overall_peak_alpha = np.mean(valid_peaks)
 
-    ret = {'peak_aplhas':peak_alphas, 'mean_peak_alpha':overall_peak_alpha}
-
-    return ret
+    return {'peak_alphas': peak_alphas, 'mean_peak_alpha': overall_peak_alpha}
 
 
 
@@ -128,7 +135,7 @@ def calculate_peak_alpha_window(eeg_data, sample_rate=256, window='hann', flatne
     return {'peak_alphas': peak_alphas, 'mean_peak_alpha': overall_peak_alpha}
 
 
-def calculate_periods_peak_alpha_simple(eeg_data, periode_length=600, sample_rate=256):
+def calculate_periods_peak_alpha_simple(eeg_data, periode_length=600, sample_rate=256, flatness_threshold=0.1, power_threshold=1e-5):
     # Ensure periode_length is in samples, not seconds
     periode_length_samples = periode_length * sample_rate
 
@@ -154,28 +161,41 @@ def calculate_periods_peak_alpha_simple(eeg_data, periode_length=600, sample_rat
         # Slice the data for this period
         eeg_slice = eeg_data.iloc[start_from:end_at]
 
+        channels = ['tp9', 'af7', 'af8', 'tp10']
         peak_alphas = {}
-        for channel in ['tp9', 'af7', 'af8', 'tp10']:
+
+        for channel in channels:
             channel_data = eeg_slice[channel].values
 
-            # Compute the FFT for this slice
+            # Compute the FFT
             freqs = np.fft.fftfreq(len(channel_data), d=1 / sample_rate)
             fft_values = np.abs(np.fft.fft(channel_data))
 
+            # Consider only positive frequencies
             positive_freqs = freqs[freqs >= 0]
             fft_values = fft_values[freqs >= 0]
 
             # Define the alpha band
             alpha_band = (positive_freqs >= 8) & (positive_freqs <= 13)
 
-            # Find the peak in the alpha band
+            # Extract alpha band data
             alpha_fft = fft_values[alpha_band]
-            peak_alpha_freq = positive_freqs[alpha_band][np.argmax(alpha_fft)]
+            alpha_freqs = positive_freqs[alpha_band]
+
+            # Check for a discernible peak in the alpha band
+            if np.max(alpha_fft) - np.min(alpha_fft) < flatness_threshold or np.max(alpha_fft) < power_threshold:
+                peak_alpha_freq = None  # Indicating no significant peak detected
+            else:
+                peak_alpha_freq = alpha_freqs[np.argmax(alpha_fft)]
 
             peak_alphas[channel] = peak_alpha_freq
 
-        # Calculate mean peak alpha for this slice
-        overall_peak_alpha = np.mean(list(peak_alphas.values()))
+        # Calculate the mean, filtering out None values
+        valid_peaks = [v for v in peak_alphas.values() if v is not None]
+        if not valid_peaks:  # If all are None
+            overall_peak_alpha = None
+        else:
+            overall_peak_alpha = np.mean(valid_peaks)
 
         # Append results for this slice
         results.append({
@@ -187,7 +207,7 @@ def calculate_periods_peak_alpha_simple(eeg_data, periode_length=600, sample_rat
 
     return results
 
-def calculate_periods_peak_alpha_welch(eeg_data, periode_length=600, sample_rate=256, nperseg=256, noverlap=None):
+def calculate_periods_peak_alpha_welch(eeg_data, periode_length=600, sample_rate=256, nperseg=256, noverlap=None, flatness_threshold=0.1, power_threshold=1e-5):
     # Ensure periode_length is in samples, not seconds
     periode_length_samples = periode_length * sample_rate
 
@@ -214,7 +234,6 @@ def calculate_periods_peak_alpha_welch(eeg_data, periode_length=600, sample_rate
         # Slice the data for this period
         eeg_slice = eeg_data.iloc[start_from:end_at]
 
-
         channels = ['tp9', 'af7', 'af8', 'tp10']
 
         peak_alphas = {}
@@ -225,19 +244,29 @@ def calculate_periods_peak_alpha_welch(eeg_data, periode_length=600, sample_rate
         for channel in channels:
             channel_data = eeg_slice[channel].values
 
-            # Using Welch's method
+            # Using Welch's method to compute PSD
             freqs, psd = signal.welch(channel_data, sample_rate, nperseg=nperseg, noverlap=noverlap)
 
             # Define alpha band
             alpha_band = (freqs >= 8) & (freqs <= 13)
 
-            # Find peak alpha frequency
+            # Check for peak within the alpha band
             alpha_psd = psd[alpha_band]
-            peak_alpha_freq = freqs[alpha_band][np.argmax(alpha_psd)]
+
+            # If the power spectrum is flat or below threshold, consider no peak
+            if np.max(alpha_psd) - np.min(alpha_psd) < flatness_threshold or np.max(alpha_psd) < power_threshold:
+                peak_alpha_freq = None
+            else:
+                peak_alpha_freq = freqs[alpha_band][np.argmax(alpha_psd)]
 
             peak_alphas[channel] = peak_alpha_freq
 
-        overall_peak_alpha = np.mean(list(peak_alphas.values()))
+        # Calculate mean, ignoring None values
+        valid_peaks = [v for v in peak_alphas.values() if v is not None]
+        if not valid_peaks:
+            overall_peak_alpha = None
+        else:
+            overall_peak_alpha = np.mean(valid_peaks)
 
         # Append results for this slice
         results.append({
@@ -281,7 +310,7 @@ def calculate_periods_peak_alpha_window(eeg_data, periode_length=600, sample_rat
         peak_alphas = {}
 
         for channel in channels:
-            channel_data = eeg_data[channel].values
+            channel_data = eeg_slice[channel].values
 
             # Create and apply window
             win = signal.get_window(window, len(channel_data))
