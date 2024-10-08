@@ -23,4 +23,8 @@ def plot_psd__power_spectral_density_1(eeg_data, location='.cache/', sampling_ra
     # Save the figure
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+
+    # Close the figure to free up memory
+    plt.close()
+
     return file

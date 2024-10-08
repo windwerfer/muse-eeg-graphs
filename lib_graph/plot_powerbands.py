@@ -32,4 +32,8 @@ def plot_powerbands_1(eeg_data, location='.cache/', sampling_rate = 256):
 
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+
+    # Close the figure to free up memory
+    plt.close()
+
     return file

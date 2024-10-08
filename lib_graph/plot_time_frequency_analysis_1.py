@@ -25,4 +25,8 @@ def plot_time_frequency_analysis_1(eeg_data, location='.cache/', sampling_rate =
 
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+
+    # Close the figure to free up memory
+    plt.close()
+
     return file

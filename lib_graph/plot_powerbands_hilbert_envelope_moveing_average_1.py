@@ -51,4 +51,8 @@ def plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data, location='.cach
 
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+
+    # Close the figure to free up memory
+    plt.close()
+
     return file

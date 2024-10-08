@@ -39,4 +39,8 @@ def plot_amplitude_distribution_histogram_1(eeg_data, location='.cache/', sampli
 
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
+
+    # Close the figure to free up memory
+    plt.close()
+
     return file
