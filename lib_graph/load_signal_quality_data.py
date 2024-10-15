@@ -21,11 +21,14 @@ def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None,
     - signal_quality_data: DataFrame, contains the signal quality data within the time range.
     """
     # Define default column names for signal quality data
-    default_columns = ['signal_is_good', 'signal_quality_tp9', 'signal_quality_af7', 'signal_quality_af8', 'signal_quality_tp10']
+    default_columns = ['signal_quality_tp9', 'signal_quality_af7', 'signal_quality_af8', 'signal_quality_tp10']
 
     # Function to check if a line contains letters
     def contains_letters(line):
         return bool(re.search('[a-zA-Z]', line))
+
+    def count_columns(line, col_separator=col_separator):
+        return len(line.split(col_separator))
 
     # Determine if the file is a zip or a csv
     if filename.endswith('.zip'):
@@ -36,21 +39,17 @@ def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None,
                 first_line = csv_file.readline().decode('utf-8').strip()
                 csv_file.seek(0)  # Reset file pointer to the start
                 has_header = contains_letters(first_line)
+                count_col = count_columns(first_line)
+
+                if count_col != len(default_columns):
+                    print(f"    WARNING: {filename} has {count_col} columns, but {len(default_columns)} are expected.")
+                    return None
 
                 if has_header:
                     signal_quality_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator)
                 else:
                     signal_quality_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator, header=None, names=default_columns)
-    else:
-        # Check if the CSV file has a header
-        with open(filename, 'r') as f:
-            first_line = f.readline().strip()
-        has_header = contains_letters(first_line)
 
-        if has_header:
-            signal_quality_df = pd.read_csv(filename, sep=col_separator)
-        else:
-            signal_quality_df = pd.read_csv(filename, sep=col_separator, header=None, names=default_columns)
 
     # Calculate sample indices based on time parameters
     start_sample = math.floor(load_from * sample_rate)

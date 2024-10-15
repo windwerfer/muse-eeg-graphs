@@ -43,16 +43,7 @@ def load_data(filename, keep_channels=['tp9', 'af7', 'af8', 'tp10'], sample_rate
                     eeg_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator)
                 else:
                     eeg_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator, header=None, names=default_columns)
-    else:
-        # Check if the CSV file has a header
-        with open(filename, 'r') as f:
-            first_line = f.readline().strip()
-        has_header = contains_letters(first_line)
 
-        if has_header:
-            eeg_df = pd.read_csv(filename, sep=col_separator)
-        else:
-            eeg_df = pd.read_csv(filename, sep=col_separator, header=None, names=default_columns)
 
     # Calculate sample indices based on time parameters
     start_sample = math.floor(load_from * sample_rate)
