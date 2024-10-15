@@ -3,7 +3,7 @@ import pandas as pd
 from Demos.getfilever import pairs
 
 
-def remove_non_connected_electrode_parts(eeg_data, signal_quality_data, ignored_electrodes=None, truncate_only_beginning_and_end=True, sample_frequency_data=256, sample_frequency_signal_quality=256):
+def remove_non_connected_electrode_parts(eeg_data, signal_quality_data, ignored_electrodes=None, truncate_only_beginning_and_end=True, sample_frequency=256):
     """
     Remove parts of the EEG data where the electrodes were not connected and return both EEG and signal quality data.
 
@@ -21,10 +21,6 @@ def remove_non_connected_electrode_parts(eeg_data, signal_quality_data, ignored_
     """
     if ignored_electrodes is None:
         ignored_electrodes = []
-
-    # Resample signal quality data if frequencies do not match
-    if sample_frequency_data != sample_frequency_signal_quality:
-        signal_quality_data = signal_quality_data.set_index('time_seconds').resample(f'{1/sample_frequency_data}S').ffill().reset_index()
 
     # Merge EEG data with signal quality data
     merged_data = pd.merge_asof(eeg_data.sort_values('time_seconds'),

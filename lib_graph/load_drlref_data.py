@@ -6,9 +6,9 @@ import zipfile
 import pandas as pd
 
 
-def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None, max_duration=None, col_separator=','):
+def load_drlref(filename, sample_rate=256, load_from=0, load_until=None, max_duration=None, col_separator=','):
     """
-    Load signal quality data from a CSV file inside a zip archive.
+    Load drlref data from a CSV file inside a zip archive.
 
     Parameters:
     - filename: str, path to the CSV or ZIP file containing the CSV.
@@ -21,7 +21,7 @@ def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None,
     - signal_quality_data: DataFrame, contains the signal quality data within the time range.
     """
     # Define default column names for signal quality data
-    default_columns = ['signal_quality_tp9', 'signal_quality_af7', 'signal_quality_af8', 'signal_quality_tp10']
+    default_columns = ['drl','ref']
 
     # Function to check if a line contains letters
     def contains_letters(line):
@@ -33,7 +33,7 @@ def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None,
     # Determine if the file is a zip or a csv
     if filename.endswith('.zip'):
         with zipfile.ZipFile(filename, 'r') as zip_ref:
-            csv_file_name = [name for name in zip_ref.namelist() if name.endswith('_signal_quality.csv')][0]
+            csv_file_name = [name for name in zip_ref.namelist() if name.endswith('_drlref.csv')][0]
             with zip_ref.open(csv_file_name) as csv_file:
                 # Check if the CSV has a header
                 first_line = csv_file.readline().decode('utf-8').strip()
@@ -46,9 +46,9 @@ def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None,
                     return None
 
                 if has_header:
-                    signal_quality_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator)
+                    drlref_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator)
                 else:
-                    signal_quality_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator, header=None, names=default_columns)
+                    drlref_df = pd.read_csv(io.TextIOWrapper(csv_file), sep=col_separator, header=None, names=default_columns)
 
 
     # Calculate sample indices based on time parameters
@@ -61,10 +61,10 @@ def load_signal_quality(filename, sample_rate=256, load_from=0, load_until=None,
         end_sample = None
 
     # Slice the dataframe based on calculated samples
-    signal_quality_df = signal_quality_df.iloc[start_sample:end_sample]
+    drlref_df = drlref_df.iloc[start_sample:end_sample]
 
     # Add sample number and convert to time in seconds
-    signal_quality_df['sample_number'] = range(start_sample, start_sample + len(signal_quality_df))
-    signal_quality_df['time_seconds'] = signal_quality_df['sample_number'] / sample_rate
+    drlref_df['sample_number'] = range(start_sample, start_sample + len(drlref_df))
+    drlref_df['time_seconds'] = drlref_df['sample_number'] / sample_rate
 
-    return signal_quality_df
+    return drlref_df

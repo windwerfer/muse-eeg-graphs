@@ -8,7 +8,7 @@ import pandas as pd
 
 def load_data(filename, keep_channels=['tp9', 'af7', 'af8', 'tp10'], sample_rate=256, load_from=0, load_until=None, max_duration=None, col_separator=','):
     """
-    Load EEG data from a CSV file, which might be inside a zip archive. Assumes column order if no header is present.
+    Load EEG data from a CSV file inside a zip archive. Assumes column order if no header is present.
 
     Parameters:
     - filename: str, path to the CSV or ZIP file containing the CSV.

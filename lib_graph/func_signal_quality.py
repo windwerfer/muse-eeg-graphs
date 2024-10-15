@@ -63,7 +63,12 @@ def signal_quality_statistics(signal_quality_data, ignored_electrodes=None):
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)
 
-    return stats_df, stats_df_bad_electrodes
+    stats_json = {
+        'good_electrodes': result,
+        'bad_electrodes': bad_result
+        }
+
+    return stats_df, stats_df_bad_electrodes, stats_json
 
 
 

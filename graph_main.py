@@ -21,14 +21,17 @@ from lib_graph.calculate_peak_alpha import calculate_peak_alpha_simple, calculat
 from lib_graph.func_eeg_data import remove_non_connected_electrode_parts, add_average_to_data
 
 from lib_graph.func_signal_quality import identify_bad_electrodes, signal_quality_statistics
-from lib_graph.html_templates import generate_detail_html_file, generate_index_file
+from lib_graph.html_templates import generate_detail_html_file, generate_index_file, generate_css_file
+from lib_graph.load_drlref_data import load_drlref
 from lib_graph.load_eeg_data import load_data
+from lib_graph.load_ica_data import load_ica
 from lib_graph.load_signal_quality_data import load_signal_quality
 from lib_graph.plot_amplitude_distribution_histogram_1 import plot_amplitude_distribution_histogram_1
 from lib_graph.plot_frequency_domain_1 import plot_frequency_domain_1
 from lib_graph.plot_powerbands import plot_powerbands_1
 from lib_graph.plot_powerbands_hilbert_envelope_1 import plot_powerbands_hilbert_envelope_1
-from lib_graph.plot_powerbands_hilbert_envelope_moveing_average_1 import plot_powerbands_hilbert_envelope_moveing_average_1
+from lib_graph.plot_powerbands_hilbert_envelope_moveing_average_1 import \
+    plot_powerbands_hilbert_envelope_moveing_average_1
 from lib_graph.plot_psd__power_spectral_density_1 import plot_psd__power_spectral_density_1
 from lib_graph.plot_time_frequency_analysis_1 import plot_time_frequency_analysis_1
 from lib_graph.save_json import save_dict_to_json_pretty
@@ -43,10 +46,12 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     b, a = butter(order, [low, high], btype='band')
     return b, a
 
+
 def bandpass_filter(data, lowcut, highcut, fs, order=5):
     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
     y = lfilter(b, a, data)
     return y
+
 
 def notch_filter(data, freq, fs, quality_factor=30):
     b, a = iirnotch(freq, quality_factor, fs)
@@ -60,6 +65,7 @@ def mk_dir(folder):
         os.makedirs(folder, exist_ok=True)
     except OSError as e:
         pass
+
 
 def rm_dir(folder):
     try:
@@ -95,9 +101,7 @@ def file_list(folder):
     return zip_files
 
 
-
 def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_base='cache', data_dir='out_eeg'):
-
     base_name = os.path.splitext(file)[0]
     cache_dir = f'{cache_dir_base}/{base_name}'
     rm_dir(cache_dir)
@@ -112,29 +116,30 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
         'theta': 'turquoise',
         'beta': 'violet',
         'gamma': '#808080'  # Hex value for gray
-    }
+        }
 
-
-
-    #todo: warning if eeg_data is empty (file shorter than load_from)
-    eeg_data = load_data(f'{data_dir}/{file}', load_from=300, load_until=1600) #, col_separator='\t')
+    # todo: warning if eeg_data is empty (file shorter than load_from)
+    eeg_data = load_data(f'{data_dir}/{file}', load_from=300, load_until=1600)
     print('eeg loaded')
 
-    signal_quality_data = load_signal_quality(f'{data_dir}/{file}', load_from=65, load_until=220) #, col_separator='\t')
-    print('signal quality loaded')
+    signal_quality_data = load_signal_quality(f'{data_dir}/{file}', load_from=65, load_until=220)
+    ica_data = load_ica(f'{data_dir}/{file}', load_from=65, load_until=220)
+    drlref_data = load_drlref(f'{data_dir}/{file}', load_from=65, load_until=220)
+    if signal_quality_data is None:
+        return None
+
+    print('signal quality files loaded')
 
     # Identify bad electrodes
     bad_electrodes = identify_bad_electrodes(signal_quality_data)
     if len(bad_electrodes) > 3:
-        return False
+        return None
 
+    eeg_data_trunc, signal_quality_data_trunc = remove_non_connected_electrode_parts(eeg_data, signal_quality_data,
+                                                                                     bad_electrodes)
 
-    eeg_data_trunc, signal_quality_data_trunc  = remove_non_connected_electrode_parts(eeg_data, signal_quality_data, bad_electrodes)
-
-    statis_good_el, statis_bad_el = signal_quality_statistics(signal_quality_data, bad_electrodes)
-    signal_quality_statis_trunc = signal_quality_statistics(signal_quality_data_trunc)
-
-
+    statis_good_el, statis_bad_el, stats_json = signal_quality_statistics(signal_quality_data, bad_electrodes)
+    # signal_quality_statis_trunc = signal_quality_statistics(signal_quality_data_trunc)
 
     # add electrode average
     add_average_to_data(eeg_data_trunc, bad_electrodes)
@@ -149,23 +154,36 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
     plot_powerbands_1(eeg_data_trunc, location=cache_dir)
     plot_powerbands_hilbert_envelope_1(eeg_data_trunc, location=cache_dir)
     icon_name = plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data_trunc, location=cache_dir)
-    generate_img_thumbnail(f'{cache_dir}/{icon_name}',f'{cache_dir}/icon.png')
+    generate_img_thumbnail(f'{cache_dir}/{icon_name}', f'{cache_dir}/icon.png')
 
     # nperseg = 256   # resolution of 1hz
     nperseg = 1024  # resolution of .25hz
     # nperseg = 2560  # resolution of 0.1hz - not so good, because the function assumes a stationary over this timeframe.. 10s seems too long, mostly its 1s, 4s seems to be okayisch
     pa_simple = calculate_peak_alpha_simple(eeg_data_trunc)
     ppa_simple = calculate_periods_peak_alpha_simple(eeg_data_trunc, periode_length=300)
-    pa_welch = calculate_peak_alpha_welch(eeg_data_trunc, nperseg=nperseg)
-    ppa_welch = calculate_periods_peak_alpha_welch(eeg_data_trunc, nperseg=nperseg, periode_length=300)
+    # nperseg=256 -> each segment is 1s long,  nperseg=1024 -> each segment is 4s long. (the welch function assumes that
+    # the waveform is static, which is only true for short periods of time, so 1s is better than 4s
+    # (10s would be too error-prone), but 4s gives 0.25Hz resolution while 1s only gives 1Hz resolution..
+    pa_welch = calculate_peak_alpha_welch(eeg_data_trunc, nperseg=256)
+    pa_welch4s = calculate_peak_alpha_welch(eeg_data_trunc, nperseg=1024)
+    ppa_welch = calculate_periods_peak_alpha_welch(eeg_data_trunc, nperseg=256, periode_length=300)
+    ppa_welch4s = calculate_periods_peak_alpha_welch(eeg_data_trunc, nperseg=1024, periode_length=300)
     pa_window = calculate_peak_alpha_window(eeg_data_trunc)
     ppa_window = calculate_periods_peak_alpha_window(eeg_data_trunc, periode_length=300)
 
-    statistics_json = {'peak_alpha_simple':pa_simple, 'peak_alpha_welch':pa_welch, 'peak_alpha_window':pa_window, 'periods_peak_alpha_simple':ppa_simple, 'periods_peak_alpha_welch':ppa_welch, 'periods_peak_alpha_window':ppa_window,  'table_good_electrodes':statis_good_el, 'table_bad_electrodes':statis_bad_el}
+    statistics_json = {
+        'peak_alpha_simple': pa_simple,
+        'peak_alpha_welch': pa_welch,
+        'peak_alpha_welch4s': pa_welch4s,
+        'peak_alpha_window': pa_window,
+        'periods_peak_alpha_simple': ppa_simple,
+        'periods_peak_alpha_welch': ppa_welch,
+        'periods_peak_alpha_welch4s': ppa_welch4s,
+        'periods_peak_alpha_window': ppa_window,
+        'table_good_electrodes': stats_json['good_electrodes'],
+        'table_bad_electrodes': stats_json['bad_electrodes']
+    }
     save_dict_to_json_pretty(statistics_json, filename='statistics.json', location=cache_dir)
-
-    # TODO: 1) generate '{cache_dir}/statistics.json' and create a {cache_dir_base}/summary.csv
-    #       2) peak alpha stats
 
 
     print(statis_good_el)
@@ -173,23 +191,26 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
 
 
 def main():
-
-
     data_dir = 'out_eeg'
     cache_dir_base = f'cache'
-
-
 
     files = file_list(data_dir)
 
     # generate_img_report_for(files[1], cache_dir_base, data_dir)
     # generate_detail_html_file(files[1], f'{cache_dir_base}')
-
+    i = 0
     for f in files:
+        # for testing only process some files
+        if i > 0:
+            break
+        i += 1
+
         generate_img_report_for(f, cache_dir_base, data_dir)
         generate_detail_html_file(f, f'{cache_dir_base}')
 
+
     generate_index_file(files, f'{cache_dir_base}')
+    generate_css_file(f'{cache_dir_base}')
 
 
 if __name__ == "__main__":
