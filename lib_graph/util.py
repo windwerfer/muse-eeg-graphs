@@ -50,3 +50,7 @@ def generate_img_thumbnail(file_name,thumb_name):
     # Save the thumbnail
     img.save(f'{thumb_name}', 'PNG')
 
+
+def is_running_in_pycharm():
+    # PyCharm sets this environment variable when running or debugging
+    return 'PYCHARM_HOSTED' in os.environ

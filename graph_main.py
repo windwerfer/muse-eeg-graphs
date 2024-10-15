@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 import pandas as pd
 import numpy as np
@@ -35,7 +36,7 @@ from lib_graph.plot_powerbands_hilbert_envelope_moveing_average_1 import \
 from lib_graph.plot_psd__power_spectral_density_1 import plot_psd__power_spectral_density_1
 from lib_graph.plot_time_frequency_analysis_1 import plot_time_frequency_analysis_1
 from lib_graph.save_json import save_dict_to_json_pretty
-from lib_graph.util import generate_img_thumbnail
+from lib_graph.util import generate_img_thumbnail, is_running_in_pycharm
 
 
 # Define filter functions
@@ -190,7 +191,7 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
     print(statis_bad_el)
 
 
-def main():
+def main(limit):
     data_dir = 'out_eeg'
     cache_dir_base = f'cache'
 
@@ -198,10 +199,10 @@ def main():
 
     # generate_img_report_for(files[1], cache_dir_base, data_dir)
     # generate_detail_html_file(files[1], f'{cache_dir_base}')
-    i = 0
+    i = 1
     for f in files:
-        # for testing only process some files
-        if i > 0:
+        # for testing only process first file. otherwise process 10 most recent files.
+        if i > limit:
             break
         i += 1
 
@@ -214,4 +215,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    try:
+        int(sys.argv[1])            # Attempt to convert the argument to an integer
+        limit = sys.argv[1]
+    except ValueError:
+        limit = 10
+    if  is_running_in_pycharm():    # if run through pycharm
+        limit = 1
+
+
+    main(limit)
