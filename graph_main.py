@@ -14,7 +14,7 @@ import io
 import math
 
 from scipy.signal import butter, lfilter, filtfilt, iirnotch
-from sklearn.decomposition import FastICA
+
 
 from lib_graph.calculate_peak_alpha import calculate_peak_alpha_simple, calculate_peak_alpha_welch, \
     calculate_peak_alpha_window, calculate_periods_peak_alpha_simple, calculate_periods_peak_alpha_welch, \
@@ -218,8 +218,8 @@ if __name__ == "__main__":
 
     try:
         int(sys.argv[1])            # Attempt to convert the argument to an integer
-        limit = sys.argv[1]
-    except ValueError:
+        limit = int(sys.argv[1])
+    except Exception as e:
         limit = 10
     if  is_running_in_pycharm():    # if run through pycharm
         limit = 1

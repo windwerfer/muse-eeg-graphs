@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from Demos.getfilever import pairs
+
 
 
 def remove_non_connected_electrode_parts(eeg_data, signal_quality_data, ignored_electrodes=None, truncate_only_beginning_and_end=True, sample_frequency=256):
