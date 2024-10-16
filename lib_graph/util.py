@@ -1,5 +1,7 @@
 import os
 import re
+
+import psutil
 from PIL import Image
 
 def find_min(text):
@@ -55,3 +57,24 @@ def generate_img_thumbnail(file_name,thumb_name):
 def is_running_in_pycharm():
     # PyCharm sets this environment variable when running or debugging
     return 'PYCHARM_HOSTED' in os.environ
+
+
+def get_script_memory_usage():
+    """
+    Get the current memory usage of this Python script in megabytes (MB).
+
+    Returns:
+    float: The memory usage in MB.
+    """
+    # Get the current process
+    process = psutil.Process(os.getpid())
+
+    # Get memory info
+    mem_info = process.memory_info()
+
+    # Convert bytes to megabytes
+    # Here we use rss (Resident Set Size), which is the portion of memory
+    # occupied by a process that is held in RAM
+    mem_usage_mb = mem_info.rss / (1024 * 1024)
+
+    return mem_usage_mb
