@@ -37,7 +37,7 @@ from lib_graph.plot_powerbands_hilbert_envelope_moveing_average_1 import \
 from lib_graph.plot_psd__power_spectral_density_1 import plot_psd__power_spectral_density_1
 from lib_graph.plot_time_frequency_analysis_1 import plot_time_frequency_analysis_1
 from lib_graph.save_json import save_dict_to_json_pretty
-from lib_graph.util import generate_img_thumbnail, is_running_in_pycharm, get_script_memory_usage
+from lib_graph.util import generate_img_thumbnail, is_running_in_pycharm, get_script_memory_usage, print_mem_usage
 
 
 def parse_args():
@@ -171,8 +171,7 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
     load_from = 0
     load_until = None
     eeg_data = load_data(f'{data_dir}/{file}', load_from=load_from, load_until=load_until)
-    mem = get_script_memory_usage()
-    print(f'eeg loaded: {mem}mb')
+    print_mem_usage('eeg loaded')
 
     signal_quality_data = load_signal_quality(f'{data_dir}/{file}', load_from=load_from, load_until=load_until)
     ica_data = load_ica(f'{data_dir}/{file}', load_from=load_from, load_until=load_until)
@@ -180,8 +179,7 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
     if signal_quality_data is None:
         return None
 
-    mem = get_script_memory_usage()
-    print(f'signal quality files loaded: {mem}mb')
+    print_mem_usage('signal quality files loaded')
 
     # Identify bad electrodes
     bad_electrodes = identify_bad_electrodes(signal_quality_data)
@@ -196,28 +194,32 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
 
     # add electrode average
     add_average_to_data(eeg_data_trunc, bad_electrodes)
-
-    mem = get_script_memory_usage()
-    print(f'eeg signals processed: {mem}mb')
+    print_mem_usage('eeg signals processed')
 
     #### eeg_data_filterd = filter_eeg_data(eeg_data_trunc, sample_rate=sample_rate, ignored_electrodes=ignored_electrodes)
 
     plot_frequency_domain_1(eeg_data_trunc, location=cache_dir)
-
-    mem = get_script_memory_usage()
-    print(f'plot (frequency_domain) : {mem}mb')
+    print_mem_usage('plot (frequency_domain)')
 
     plot_psd__power_spectral_density_1(eeg_data_trunc, location=cache_dir)
+    print_mem_usage('plot (power_spectral_density)')
+
     plot_time_frequency_analysis_1(eeg_data_trunc, location=cache_dir)
+    print_mem_usage('plot (time_frequency_analysis)')
+
     plot_amplitude_distribution_histogram_1(eeg_data_trunc, location=cache_dir)
+    print_mem_usage('plot (amplitude_distribution_histogram)')
 
     plot_powerbands_1(eeg_data_trunc, location=cache_dir)
+    print_mem_usage('plot (powerbands)')
+
     plot_powerbands_hilbert_envelope_1(eeg_data_trunc, location=cache_dir)
+    print_mem_usage('plot (powerbands_hilbert_envelope)')
+
     icon_name = plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data_trunc, location=cache_dir)
     generate_img_thumbnail(f'{cache_dir}/{icon_name}', f'{cache_dir}/icon.png')
+    print_mem_usage('plot (icon)')
 
-    mem = get_script_memory_usage()
-    print(f'plot (all) : {mem}mb')
 
     # nperseg = 256   # resolution of 1hz
     nperseg = 1024  # resolution of .25hz
@@ -225,8 +227,7 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
     pa_simple = calculate_peak_alpha_simple(eeg_data_trunc)
     ppa_simple = calculate_periods_peak_alpha_simple(eeg_data_trunc, periode_length=300)
 
-    mem = get_script_memory_usage()
-    print(f'peak alpha (simple) processed: {mem}mb')
+    print_mem_usage('peak alpha (simple) processed')
 
     # nperseg=256 -> each segment is 1s long,  nperseg=1024 -> each segment is 4s long. (the welch function assumes that
     # the waveform is static, which is only true for short periods of time, so 1s is better than 4s
@@ -238,8 +239,7 @@ def generate_img_report_for(file='tho_eeglab_2024.09.04_22.02.zip', cache_dir_ba
     pa_window = calculate_peak_alpha_window(eeg_data_trunc)
     ppa_window = calculate_periods_peak_alpha_window(eeg_data_trunc, periode_length=300)
 
-    mem = get_script_memory_usage()
-    print(f'peak alpha (all) processed: {mem}mb')
+    print_mem_usage('peak alpha (all) processed')
 
     statistics_json = {
         'peak_alpha_simple': pa_simple,
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         limit = args.limit
 
     if  is_running_in_pycharm():    # if run through pycharm
-        limit = 1                   # only process most recent file
+        limit = 2                   # only process most recent file
         # recalculate = 1
 
 

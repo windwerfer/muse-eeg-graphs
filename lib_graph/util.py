@@ -78,3 +78,7 @@ def get_script_memory_usage():
     mem_usage_mb = mem_info.rss / (1024 * 1024)
 
     return mem_usage_mb
+
+def print_mem_usage(text):
+    mem = round(get_script_memory_usage(),0)
+    print(f'{text}: {mem}mb')

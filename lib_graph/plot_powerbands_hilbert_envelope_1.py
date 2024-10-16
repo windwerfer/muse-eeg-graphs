@@ -1,3 +1,5 @@
+import gc
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import welch
@@ -27,7 +29,7 @@ def plot_powerbands_hilbert_envelope_1(eeg_data, location='.cache/', sampling_ra
     envelope = np.abs(analytic_signal)
 
     # Plot the Alpha band signal with its envelope
-    plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(14, 6))
     if not only_hilbert:
         plt.plot(alpha_signal, color='blue', label='Alpha Band (8-13 Hz)')
     plt.plot(envelope, color='red', label='Envelope', linewidth=1)
@@ -41,7 +43,12 @@ def plot_powerbands_hilbert_envelope_1(eeg_data, location='.cache/', sampling_ra
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
 
-    # Close the figure to free up memory
-    plt.close()
+    # Clear and close all figures
+    plt.clf()  # Clear the current figure
+    plt.close('all')  # Close all figure windows
+    del fig  # Explicitly delete the figure object
+
+    # Force garbage collection
+    gc.collect()
 
     return file

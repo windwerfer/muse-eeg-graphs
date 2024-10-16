@@ -1,3 +1,5 @@
+import gc
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import welch
@@ -39,7 +41,7 @@ def plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data, location='.cach
     smoothed_envelope = moving_average(envelope, window_size)
 
     # Plot the Alpha band signal with the smoothed envelope
-    plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(14, 6))
     plt.plot(alpha_signal, color='blue', label='Alpha Band (8-13 Hz)')
     plt.plot(smoothed_envelope, color='red', label='Smoothed Envelope', linewidth=2)
     plt.title('Alpha Band of EEG Signal (TP9) - Time Domain with Smoothed Envelope')
@@ -52,7 +54,12 @@ def plot_powerbands_hilbert_envelope_moveing_average_1(eeg_data, location='.cach
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
 
-    # Close the figure to free up memory
-    plt.close()
+    # Clear and close all figures
+    plt.clf()  # Clear the current figure
+    plt.close('all')  # Close all figure windows
+    del fig  # Explicitly delete the figure object
+
+    # Force garbage collection
+    gc.collect()
 
     return file

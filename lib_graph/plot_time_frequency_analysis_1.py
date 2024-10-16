@@ -1,3 +1,5 @@
+import gc
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import welch
@@ -14,7 +16,7 @@ def plot_time_frequency_analysis_1(eeg_data, location='.cache/', sampling_rate =
     frequencies, times, Sxx = spectrogram(eeg_signal, fs=sampling_rate, nperseg=512, noverlap=256, nfft=1024)
 
     # Plot the spectrogram
-    plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(14, 6))
     plt.pcolormesh(times, frequencies, 10 * np.log10(Sxx), shading='gouraud')
     plt.title('Spectrogram of EEG Signal - TP9')
     plt.ylabel('Frequency (Hz)')
@@ -26,7 +28,12 @@ def plot_time_frequency_analysis_1(eeg_data, location='.cache/', sampling_rate =
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
 
-    # Close the figure to free up memory
-    plt.close()
+    # Clear and close all figures
+    plt.clf()  # Clear the current figure
+    plt.close('all')  # Close all figure windows
+    del fig  # Explicitly delete the figure object
+
+    # Force garbage collection
+    gc.collect()
 
     return file

@@ -1,3 +1,4 @@
+import gc
 
 from matplotlib import pyplot as plt
 
@@ -28,7 +29,7 @@ def plot_amplitude_distribution_histogram_1(eeg_data, location='.cache/', sampli
 
     eeg_signal = eeg_data['electrodes_average'].values
 
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     plt.hist(eeg_signal, bins=50, color='c', edgecolor='black', alpha=0.7)
     plt.title('Amplitude Distribution of EEG Signal - TP9')
     plt.xlabel('Amplitude')
@@ -40,7 +41,12 @@ def plot_amplitude_distribution_histogram_1(eeg_data, location='.cache/', sampli
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
 
-    # Close the figure to free up memory
-    plt.close()
+    # Clear and close all figures
+    plt.clf()  # Clear the current figure
+    plt.close('all')  # Close all figure windows
+    del fig  # Explicitly delete the figure object
+
+    # Force garbage collection
+    gc.collect()
 
     return file

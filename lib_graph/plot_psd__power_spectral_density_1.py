@@ -1,3 +1,5 @@
+import gc
+
 from matplotlib import pyplot as plt
 from scipy.signal import welch
 
@@ -11,7 +13,7 @@ def plot_psd__power_spectral_density_1(eeg_data, location='.cache/', sampling_ra
     frequencies, psd = welch(eeg_signal, fs=sampling_rate, nperseg=1024)
 
     # Plot the Power Spectral Density (PSD)
-    plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(14, 6))
     plt.semilogy(frequencies, psd)
     plt.title('Power Spectral Density (PSD) of EEG Signal - TP9')
     plt.xlabel('Frequency (Hz)')
@@ -24,7 +26,12 @@ def plot_psd__power_spectral_density_1(eeg_data, location='.cache/', sampling_ra
     # Save the figure
     plt.savefig(f'{location}/{file}', dpi=300, bbox_inches='tight')
 
-    # Close the figure to free up memory
-    plt.close()
+    # Clear and close all figures
+    plt.clf()  # Clear the current figure
+    plt.close('all')  # Close all figure windows
+    del fig  # Explicitly delete the figure object
+
+    # Force garbage collection
+    gc.collect()
 
     return file
